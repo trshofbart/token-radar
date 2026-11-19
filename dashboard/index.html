@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Launch Radar — pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">
+    <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div>
+      <h1>Token Launch Radar</h1>
+      <p class="tagline">Every protocol that records no token yet, ranked by what its launch would be worth — and how to farm it first.</p>
+    </div>
+  </div>
+  <dl class="stats" id="stats"></dl>
+</header>
+
+<section class="toolbar" aria-label="Board controls">
+  <label class="field grow">Search
+    <input id="q" type="search" placeholder="Protocol name or slug" autocomplete="off">
+  </label>
+  <label class="field">Category
+    <select id="category"><option value="">All categories</option></select>
+  </label>
+  <label class="field">Chain
+    <select id="chain"><option value="">All chains</option></select>
+  </label>
+  <label class="field">Sort by
+    <select id="sort">
+      <option value="value">Implied value</option>
+      <option value="tvl">TVL</option>
+      <option value="growth">7d growth</option>
+      <option value="age">Days tokenless</option>
+      <option value="multiple">Value / TVL</option>
+    </select>
+  </label>
+  <label class="check"><input id="watch" type="checkbox"> Watchlist only</label>
+  <button id="reset" type="button">Reset</button>
+</section>
+
+<main class="layout">
+  <section class="board-wrap">
+    <p class="count" id="count"></p>
+    <table class="board" id="board">
+      <thead><tr>
+        <th class="num">#</th><th>Protocol</th><th>Category</th><th class="num">TVL</th>
+        <th class="num">7d</th><th class="num">Tokenless</th><th class="num">Implied value</th><th class="num">x TVL</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+  <aside class="detail" id="detail" aria-live="polite"></aside>
+</main>
+
+<section class="model" id="model">
+  <h2>How the number is made</h2>
+  <p>An implied value is a claim about one thing: what this protocol's token would be worth if it
+  launched with its record exactly as the snapshot holds it. It is built only from the snapshot's own
+  figures. Tokenised protocols set the price of TVL — the median market cap per TVL dollar in the
+  protocol's category, shrunk toward the global median when the category is thin. That multiple is
+  then moved by the protocol's own seven-day TVL growth and by its endurance: how long it has run,
+  at size, with no token. Each live ratio is winsorised at the market's 90th percentile first, so one
+  wild peer cannot price a whole category. Wrapped, staked and bridged products of tokens that already
+  trade, bridges and exchanges are priced at the global multiple on at most $5B of their TVL with a
+  0.05 scope factor, the reason printed on the row — they are set aside by the same rule that builds
+  the watchlist. Every row of the board carries its own arithmetic; open any protocol to audit it.</p>
+  <div class="model-grid">
+    <div>
+      <h3>Category peer multiples</h3>
+      <table class="mini" id="multiples"></table>
+    </div>
+    <div>
+      <h3>Already trading — set aside, not ranked</h3>
+      <table class="mini" id="live"></table>
+      <p class="note">The radar ranks only protocols that record no token. Live tokens are shown here
+      as the market's own reference points: they are the peers whose prices set the multiples above.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>Snapshot: DefiLlama protocol data as of <span id="asof"></span>, sealed — the board never moves
+  under you. Implied values are this radar's model, not a prediction that any token will be issued.</p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
