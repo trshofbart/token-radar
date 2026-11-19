@@ -72,7 +72,7 @@ function render() {
       <td class="num ${r.change_7d === null ? '' : r.change_7d >= 0 ? 'pos' : 'neg'}">${pct(r.change_7d)}</td>
       <td class="num">${days(r.age_days)}</td>
       <td class="num value">${compact(r.implied_value_usd)}</td>
-      <td class="num">${(r.implied_value_usd / r.tvl_usd).toFixed(2)}x</td>
+      <td class="num">${(r.implied_value_usd / r.tvl_usd) < 0.095 ? (r.implied_value_usd / r.tvl_usd).toFixed(3) : (r.implied_value_usd / r.tvl_usd).toFixed(2)}x</td>
     </tr>`).join('');
   for (const tr of $('rows').children) {
     tr.addEventListener('click', () => select(tr.dataset.slug, false));
@@ -104,6 +104,11 @@ function select(slug, scroll) {
     <h3>Farm plan</h3>
     <ol class="steps">${r.farm_steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`;
   if (scroll) $('detail').scrollIntoView({ block: 'start' });
+  if (params.get('focus') === 'steps') {
+    const steps = document.querySelector('.steps');
+    const panel = $('detail');
+    if (steps) panel.scrollTop = steps.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop - 140;
+  }
 }
 
 $('q').addEventListener('input', (e) => { state.q = e.target.value; render(); });
@@ -118,4 +123,4 @@ $('reset').addEventListener('click', () => {
 });
 
 render();
-select(params.get('detail') ?? R.rows[0].slug, false);
+select(params.get('detail') ?? visible()[0]?.slug ?? R.rows[0].slug, false);
