@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Launch Radar — pre-token protocols ranked by implied value</title>
+<title>Token Launch Radar — which protocols could launch a valuable token?</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -12,33 +12,38 @@
     <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
     <div>
       <h1>Token Launch Radar</h1>
-      <p class="tagline">Every protocol that records no token yet, ranked by what its launch would be worth — and how to farm it first.</p>
+      <p class="tagline">Some crypto protocols still have no token of their own. This page ranks all of them by what a token launch could be worth — and shows you, step by step, how to position yourself before it happens.</p>
     </div>
   </div>
   <dl class="stats" id="stats"></dl>
 </header>
 
+<section class="how" aria-label="How it works">
+  <div class="how-step"><span class="how-num">1</span><div><strong>We scan everything</strong><p>Every protocol in the snapshot is checked: does it already have a token, and how much money is locked in it?</p></div></div>
+  <div class="how-step"><span class="how-num">2</span><div><strong>We estimate the launch</strong><p>Similar protocols that already trade set the price. We apply that price to each tokenless protocol, adjusted for its growth and how long it has run.</p></div></div>
+  <div class="how-step"><span class="how-num">3</span><div><strong>You get a farm plan</strong><p>Open any protocol: a plain-English breakdown of its estimate, plus the exact steps to farm it, with costs and time on each step.</p></div></div>
+</section>
+
+<section class="hero">
+  <h2>Top 5 launches to watch</h2>
+  <div class="cards" id="cards"></div>
+</section>
+
 <section class="toolbar" aria-label="Board controls">
-  <label class="field grow">Search
-    <input id="q" type="search" placeholder="Protocol name or slug" autocomplete="off">
+  <label class="field grow">Search a protocol
+    <input id="q" type="search" placeholder="Try “Morpho”, “steakhouse”, “lending”…" autocomplete="off">
   </label>
-  <label class="field">Category
-    <select id="category"><option value="">All categories</option></select>
-  </label>
-  <label class="field">Chain
-    <select id="chain"><option value="">All chains</option></select>
-  </label>
-  <label class="field">Sort by
+  <label class="field">Sort the list by
     <select id="sort">
-      <option value="value">Implied value</option>
-      <option value="tvl">TVL</option>
-      <option value="growth">7d growth</option>
-      <option value="age">Days tokenless</option>
-      <option value="multiple">Value / TVL</option>
+      <option value="value">Estimated launch value</option>
+      <option value="tvl">Money locked in it</option>
+      <option value="growth">7-day growth</option>
+      <option value="age">Longest without a token</option>
     </select>
   </label>
-  <label class="check"><input id="watch" type="checkbox"> Watchlist only</label>
+  <label class="check"><input id="watch" type="checkbox"> House watchlist only</label>
   <button id="reset" type="button">Reset</button>
+  <div class="chips" id="chips" aria-label="Filter by category"></div>
 </section>
 
 <main class="layout">
@@ -46,8 +51,8 @@
     <p class="count" id="count"></p>
     <table class="board" id="board">
       <thead><tr>
-        <th class="num">#</th><th>Protocol</th><th>Category</th><th class="num">TVL</th>
-        <th class="num">7d</th><th class="num">Tokenless</th><th class="num">Implied value</th><th class="num">x TVL</th>
+        <th class="num">#</th><th>Protocol</th><th>Type</th><th class="num">Money locked</th>
+        <th class="num">7-day trend</th><th class="num">No token for</th><th class="num">Estimated launch value</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
@@ -56,34 +61,34 @@
 </main>
 
 <section class="model" id="model">
-  <h2>How the number is made</h2>
-  <p>An implied value is a claim about one thing: what this protocol's token would be worth if it
-  launched with its record exactly as the snapshot holds it. It is built only from the snapshot's own
-  figures. Tokenised protocols set the price of TVL — the median market cap per TVL dollar in the
-  protocol's category, shrunk toward the global median when the category is thin. That multiple is
-  then moved by the protocol's own seven-day TVL growth and by its endurance: how long it has run,
-  at size, with no token. Each live ratio is winsorised at the market's 90th percentile first, so one
-  wild peer cannot price a whole category. Wrapped, staked and bridged products of tokens that already
-  trade, bridges and exchanges are priced at the global multiple on at most $5B of their TVL with a
-  0.05 scope factor, the reason printed on the row — they are set aside by the same rule that builds
-  the watchlist. Every row of the board carries its own arithmetic; open any protocol to audit it.</p>
+  <h2>How the estimate is made (the full method)</h2>
+  <p>An estimated launch value answers one question: what would this protocol's token be worth if it
+  launched with its record exactly as the snapshot holds it? It is built only from the snapshot's own
+  figures. Protocols that already trade set the price of locked money — the median market cap per
+  dollar locked in the protocol's category, shrunk toward the global median when the category is thin.
+  Each live price is winsorised at the market's 90th percentile first, so one wild peer cannot price a
+  whole category. That price is then moved by the protocol's own seven-day growth and by its endurance:
+  how long it has run, at size, with no token. Wrapped, staked and bridged products of tokens that
+  already trade, bridges and exchanges are priced at the global rate on at most $5B of their locked
+  money with a 0.05 scope factor, the reason printed on the row — they are set aside by the same rule
+  that builds the watchlist. Every row carries its own arithmetic; open any protocol to audit it.</p>
   <div class="model-grid">
     <div>
-      <h3>Category peer multiples</h3>
+      <h3>What the market pays per $1 locked, by type</h3>
       <table class="mini" id="multiples"></table>
     </div>
     <div>
-      <h3>Already trading — set aside, not ranked</h3>
+      <h3>Already have a token — set aside, not ranked</h3>
       <table class="mini" id="live"></table>
-      <p class="note">The radar ranks only protocols that record no token. Live tokens are shown here
-      as the market's own reference points: they are the peers whose prices set the multiples above.</p>
+      <p class="note">The radar ranks only protocols that record no token. These live tokens are the
+      reference points: their prices are what set the rates in the table on the left.</p>
     </div>
   </div>
 </section>
 
 <footer>
-  <p>Snapshot: DefiLlama protocol data as of <span id="asof"></span>, sealed — the board never moves
-  under you. Implied values are this radar's model, not a prediction that any token will be issued.</p>
+  <p>Data: DefiLlama protocol snapshot as of <span id="asof"></span>, sealed — the numbers never move
+  under you. Estimates are this radar's model, not a promise that any token will be issued. Nothing here is financial advice.</p>
 </footer>
 
 <script src="../data.js"></script>
