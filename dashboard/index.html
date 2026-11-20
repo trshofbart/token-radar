@@ -3,37 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Launch Radar — which protocols could launch a valuable token?</title>
+<title>Token Launch Radar — pre-token protocols ranked by estimated launch value</title>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<div class="strip" id="strip"></div>
+
 <header class="masthead">
   <div class="brand">
     <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
-    <div>
-      <h1>Token Launch Radar</h1>
-      <p class="tagline">Some crypto protocols still have no token of their own. This page ranks all of them by what a token launch could be worth — and shows you, step by step, how to position yourself before it happens.</p>
-    </div>
+    <div class="wordmark">Token Launch <em>Radar</em></div>
   </div>
-  <dl class="stats" id="stats"></dl>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#board-section">Rankings</a>
+    <a href="#method">How the estimate works</a>
+  </nav>
+  <label class="head-search">
+    <input id="q" type="search" placeholder="Search a protocol…" autocomplete="off">
+  </label>
 </header>
 
-<section class="how" aria-label="How it works">
-  <div class="how-step"><span class="how-num">1</span><div><strong>We scan everything</strong><p>Every protocol in the snapshot is checked: does it already have a token, and how much money is locked in it?</p></div></div>
-  <div class="how-step"><span class="how-num">2</span><div><strong>We estimate the launch</strong><p>Similar protocols that already trade set the price. We apply that price to each tokenless protocol, adjusted for its growth and how long it has run.</p></div></div>
-  <div class="how-step"><span class="how-num">3</span><div><strong>You get a farm plan</strong><p>Open any protocol: a plain-English breakdown of its estimate, plus the exact steps to farm it, with costs and time on each step.</p></div></div>
+<section class="intro">
+  <h1>Protocols that still have no token, ranked by what a launch could be worth</h1>
+  <p>Like the big ranking sites — but for tokens that do not exist yet. Every row is a protocol that
+  records no token: its estimated launch value comes from what similar, already-trading protocols are
+  worth, and each one carries a step-by-step farm plan with costs and time on it.</p>
 </section>
 
-<section class="hero">
-  <h2>Top 5 launches to watch</h2>
-  <div class="cards" id="cards"></div>
-</section>
+<section class="boxes" id="boxes"></section>
 
 <section class="toolbar" aria-label="Board controls">
-  <label class="field grow">Search a protocol
-    <input id="q" type="search" placeholder="Try “Morpho”, “steakhouse”, “lending”…" autocomplete="off">
-  </label>
-  <label class="field">Sort the list by
+  <div class="chips" id="chips" aria-label="Filter by category"></div>
+  <label class="field">Sort by
     <select id="sort">
       <option value="value">Estimated launch value</option>
       <option value="tvl">Money locked in it</option>
@@ -42,17 +43,16 @@
     </select>
   </label>
   <label class="check"><input id="watch" type="checkbox"> House watchlist only</label>
-  <button id="reset" type="button">Reset</button>
-  <div class="chips" id="chips" aria-label="Filter by category"></div>
+  <button id="reset" class="reset" type="button">Reset</button>
 </section>
 
-<main class="layout">
+<main class="layout" id="board-section">
   <section class="board-wrap">
     <p class="count" id="count"></p>
     <table class="board" id="board">
       <thead><tr>
-        <th class="num">#</th><th>Protocol</th><th>Type</th><th class="num">Money locked</th>
-        <th class="num">7-day trend</th><th class="num">No token for</th><th class="num">Estimated launch value</th>
+        <th class="num">#</th><th></th><th>Protocol</th><th class="num">Est. launch value</th>
+        <th class="num">7d trend</th><th class="num">Money locked</th><th class="num">No token for</th><th>Launch multiple</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
@@ -60,8 +60,8 @@
   <aside class="detail" id="detail" aria-live="polite"></aside>
 </main>
 
-<section class="model" id="model">
-  <h2>How the estimate is made (the full method)</h2>
+<section class="model" id="method">
+  <h2>How the estimate works (the full method)</h2>
   <p>An estimated launch value answers one question: what would this protocol's token be worth if it
   launched with its record exactly as the snapshot holds it? It is built only from the snapshot's own
   figures. Protocols that already trade set the price of locked money — the median market cap per

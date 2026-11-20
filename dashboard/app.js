@@ -1,7 +1,7 @@
-// Token Launch Radar: renders window.RADAR (written by main.ts beside this page) for a
-// first-time reader. A hero strip of the top five, a filterable board anyone can scan,
-// and a detail view that explains each estimate in plain words before it shows the
-// arithmetic. No network, no framework: the sealed snapshot is the only data there is.
+// Token Launch Radar: renders window.RADAR (written by main.ts beside this page) in the
+// shape every crypto reader already knows from the big ranking sites — a stats strip,
+// trending boxes, a clean ranking table and a per-protocol page — except every row is a
+// protocol whose token does not exist yet. No network, no framework.
 
 const R = window.RADAR;
 const $ = (id) => document.getElementById(id);
@@ -9,17 +9,20 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const compact = (v) => (v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(1)}K` : `$${v}`);
 const full = (v) => '$' + Math.round(v).toLocaleString('en-US');
-const pct = (v) => (v === null ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(1)}%`);
+const pct = (v) => (v === null ? '—' : `${v > 0 ? '▲ ' : v < 0 ? '▼ ' : ''}${Math.abs(v).toFixed(1)}%`);
 const noTokenFor = (v) => (v === null ? 'not reported' : v >= 730 ? `${(v / 365).toFixed(1)} years` : v >= 60 ? `${Math.round(v / 30)} months` : `${v} days`);
+const isScoped = (r) => r.model.includes('scoped:');
+const initials = (name) => name.replace(/[^A-Za-z0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
+const hue = (slug) => { let h = 0; for (let i = 0; i < slug.length; i++) h = (h * 31 + slug.charCodeAt(i)) % 360; return h; };
+const avatar = (r, lg) => `<span class="avatar${lg ? ' lg' : ''}" style="background:hsl(${hue(r.slug)},52%,46%)">${esc(initials(r.name))}</span>`;
 
-// ---- header stats, model tables, footer --------------------------------------------
+// ---- stats strip, model tables, footer -------------------------------------------------
 
-$('stats').innerHTML = [
-  ['Protocols scanned', R.protocol_count],
-  ['Still no token', R.rows.length],
-  ['Watchlist covered', `${R.watchlist_count} / ${R.watchlist_count}`],
-  ['Already have a token', R.live_count],
-].map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+$('strip').innerHTML = [
+  ['Protocols', R.protocol_count], ['Still no token', R.rows.length],
+  ['Watchlist covered', `${R.watchlist_count}/${R.watchlist_count}`], ['Already trading', R.live_count],
+  ['Snapshot', R.as_of], ['Global peer price', `${R.global_multiple.toFixed(2)}x per $1 locked`],
+].map(([k, v]) => `<span>${esc(k)}: <b>${esc(v)}</b></span>`).join('');
 $('asof').textContent = R.as_of;
 
 $('multiples').innerHTML =
@@ -29,21 +32,26 @@ $('live').innerHTML =
   '<tr><th>Protocol</th><th class="num">Money locked</th><th class="num">Token value today</th></tr>' +
   R.live.map((p) => `<tr><td>${esc(p.name)}</td><td class="num">${compact(p.tvl_usd)}</td><td class="num">${compact(p.mcap_usd)}</td></tr>`).join('');
 
-// ---- top five hero cards --------------------------------------------------------------
+// ---- the three boxes ---------------------------------------------------------------------
 
-$('cards').innerHTML = R.rows.slice(0, 5).map((r) => `
-  <button class="card" type="button" data-slug="${esc(r.slug)}">
-    <span class="rank">#${r.rank} to watch</span>
-    <div class="cname">${esc(r.name)}</div>
-    <div class="ccat">${esc(r.category ?? 'Uncategorised')} · ${compact(r.tvl_usd)} locked · no token for ${noTokenFor(r.age_days)}</div>
-    <div class="cval">${compact(r.implied_value_usd)}</div>
-    <div class="clabel">estimated launch value — tap for the farm plan</div>
-  </button>`).join('');
-for (const card of $('cards').children) {
-  card.addEventListener('click', () => select(card.dataset.slug, true));
+const boxRow = (r, show) => `
+  <div class="box-row" data-slug="${esc(r.slug)}">
+    <span class="br-rank">${r.rank}</span>${avatar(r)}
+    <span class="br-name">${esc(r.name)}</span>
+    <span class="br-val ${show === 'growth' ? (r.change_7d >= 0 ? 'pos' : 'neg') : ''}">${show === 'growth' ? pct(r.change_7d) : compact(show === 'tvl' ? r.tvl_usd : r.implied_value_usd)}</span>
+  </div>`;
+const candidates = R.rows.filter((r) => !isScoped(r));
+$('boxes').innerHTML = [
+  ['Top launches to watch', 'by estimated value', [...R.rows].sort((a, b) => b.implied_value_usd - a.implied_value_usd).slice(0, 3), 'value'],
+  ['Most money locked', 'no token yet', [...candidates].sort((a, b) => b.tvl_usd - a.tvl_usd).slice(0, 3), 'tvl'],
+  ['Fastest growing', '7-day TVL, $50M+ locked', candidates.filter((r) => r.tvl_usd >= 50e6 && r.change_7d !== null).sort((a, b) => b.change_7d - a.change_7d).slice(0, 3), 'growth'],
+].map(([title, sub, rows, show]) => `
+  <div class="box"><h3>${esc(title)} <span>${esc(sub)}</span></h3>${rows.map((r) => boxRow(r, show)).join('')}</div>`).join('');
+for (const row of document.querySelectorAll('.box-row')) {
+  row.addEventListener('click', () => select(row.dataset.slug, true));
 }
 
-// ---- controls: search, category chips, sort, watchlist --------------------------------
+// ---- controls: search (in the masthead), category chips, sort, watchlist ------------------
 
 const categories = [...new Set(R.rows.map((r) => r.category ?? 'Uncategorised'))].sort();
 const chipCats = ['', 'Lending', 'Dexs', 'Liquid Staking', 'Yield', 'Derivatives', 'RWA', 'Risk Curators', 'Bridge']
@@ -51,7 +59,7 @@ const chipCats = ['', 'Lending', 'Dexs', 'Liquid Staking', 'Yield', 'Derivatives
 $('chips').innerHTML = chipCats.map((c) =>
   `<button class="chip" type="button" data-cat="${esc(c)}">${c === '' ? 'All types' : esc(c)}</button>`).join('');
 
-const state = { q: '', category: '', chain: '', watch: false, sort: 'value', selected: null };
+const state = { q: '', category: '', watch: false, sort: 'value', selected: null };
 const params = new URLSearchParams(location.search);
 if (params.get('shot') === 'board') document.body.classList.add('shot');
 if (params.get('q')) { state.q = params.get('q'); $('q').value = state.q; }
@@ -60,8 +68,8 @@ if (params.get('watch') === '1') { state.watch = true; $('watch').checked = true
 if (params.get('sort')) { state.sort = params.get('sort'); $('sort').value = state.sort; }
 
 function paintChips() {
-  for (const chip of $('chips').children) chip.classList.toggle('on', chip.dataset.cat === state.category);
   for (const chip of $('chips').children) {
+    chip.classList.toggle('on', chip.dataset.cat === state.category);
     chip.onclick = () => { state.category = chip.dataset.cat; paintChips(); render(); };
   }
 }
@@ -83,24 +91,28 @@ function visible() {
 function render() {
   const rows = visible();
   $('count').textContent = rows.length === R.rows.length
-    ? `All ${rows.length} protocols without a token, best launch first. Tap any row to see why it ranks there and how to farm it.`
+    ? `All ${rows.length} protocols without a token, best launch first. Click any row for its estimate breakdown and farm plan.`
     : `${rows.length} of ${R.rows.length} protocols match your filters. Ranks never change when you sort or filter — they are the board's own.`;
-  $('rows').innerHTML = rows.map((r) => `
+  $('rows').innerHTML = rows.map((r) => {
+    const ratio = r.implied_value_usd / r.tvl_usd;
+    return `
     <tr data-slug="${esc(r.slug)}" class="${state.selected === r.slug ? 'selected' : ''}">
       <td class="num">${r.rank}</td>
-      <td><span class="pname">${esc(r.name)}</span>${r.on_watchlist ? '<span class="badge">watchlist</span>' : ''}<br><span class="pslug">${esc(r.slug)}</span></td>
-      <td>${esc(r.category ?? 'Uncategorised')}</td>
-      <td class="num">${compact(r.tvl_usd)}</td>
-      <td class="num ${r.change_7d === null ? '' : r.change_7d >= 0 ? 'pos' : 'neg'}">${pct(r.change_7d)}</td>
-      <td class="num">${noTokenFor(r.age_days)}</td>
+      <td>${r.on_watchlist ? '<span class="star" title="On the house watchlist">★</span>' : ''}</td>
+      <td>${avatar(r)} <span class="pname">${esc(r.name)}</span><span class="pslug">${esc(r.slug)}</span></td>
       <td class="num value">${compact(r.implied_value_usd)}</td>
-    </tr>`).join('');
+      <td class="num ${r.change_7d === null ? '' : r.change_7d >= 0 ? 'pos' : 'neg'}">${pct(r.change_7d)}</td>
+      <td class="num">${compact(r.tvl_usd)}</td>
+      <td class="num">${noTokenFor(r.age_days)}</td>
+      <td><span class="mult"><span class="track"><i style="width:${Math.min(100, Math.round((ratio / 1.5) * 100))}%"></i></span><span class="mval">${ratio < 0.095 ? ratio.toFixed(3) : ratio.toFixed(2)}x</span></span></td>
+    </tr>`;
+  }).join('');
   for (const tr of $('rows').children) {
     tr.addEventListener('click', () => select(tr.dataset.slug, false));
   }
 }
 
-// ---- detail view -----------------------------------------------------------------------
+// ---- detail view ----------------------------------------------------------------------------
 
 function select(slug, scroll) {
   const r = R.rows.find((x) => x.slug === slug);
@@ -110,8 +122,10 @@ function select(slug, scroll) {
   const widest = Math.max(r.implied_value_usd, r.tvl_usd);
   const barW = (v) => Math.max(4, Math.round((Math.sqrt(v) / Math.sqrt(widest)) * 100));
   $('detail').innerHTML = `
-    <h2>${esc(r.name)}</h2>
-    <p class="sub">${esc(r.slug)} · ranked #${r.rank} of ${R.rows.length}${r.on_watchlist ? ' · on the house watchlist' : ''}</p>
+    <div class="detail-head">${avatar(r, true)}
+      <div><h2>${esc(r.name)}</h2>
+      <p class="sub">${esc(r.slug)} · ranked #${r.rank} of ${R.rows.length}${r.on_watchlist ? ' · ★ house watchlist' : ''}</p></div>
+    </div>
     <div class="big-value">${full(r.implied_value_usd)}</div>
     <p class="big-label">estimated value if ${esc(r.name)} launched a token with today's record</p>
     <div class="bar-wrap">
@@ -147,7 +161,6 @@ $('reset').addEventListener('click', () => {
   $('q').value = ''; $('watch').checked = false; $('sort').value = 'value';
   paintChips(); render();
 });
-$('reset').className = 'reset';
 
 paintChips();
 render();
